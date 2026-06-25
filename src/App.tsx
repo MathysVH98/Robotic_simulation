@@ -47,7 +47,7 @@ function Header() {
 
 const INSPECT =
   typeof window !== 'undefined' &&
-  /[?&](wrist|parts|stack)\b/.test(window.location.search)
+  /[?&](wrist|parts|stack|tooltest)\b/.test(window.location.search)
 const CALIB =
   typeof window !== 'undefined' && /[?&]calib\b/.test(window.location.search)
 

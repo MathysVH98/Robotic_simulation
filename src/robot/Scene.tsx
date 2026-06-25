@@ -11,11 +11,13 @@ import {
   GizmoViewport,
 } from '@react-three/drei'
 import { RobotArm } from './RobotArm'
+import { Tool } from './tools'
 import { BxPartsGrid, BxStack, BxWristParts } from './bxMeshes'
 
 const SHOW_PARTS = typeof window !== 'undefined' && window.location.search.includes('parts')
 const SHOW_STACK = typeof window !== 'undefined' && window.location.search.includes('stack')
 const SHOW_WRIST = typeof window !== 'undefined' && window.location.search.includes('wrist')
+const SHOW_TOOL = typeof window !== 'undefined' && window.location.search.includes('tooltest')
 const VIEW = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('view') : null
 const PARTS_CAM: [number, number, number] =
   VIEW === 'side' ? [8, 0.4, 0] : VIEW === 'top' ? [0, 8, 0.01] : [0, 0.4, 8]
@@ -34,17 +36,19 @@ export function Scene() {
       shadows
       dpr={[1, 2]}
       camera={{
-        position: SHOW_WRIST
-          ? VIEW === 'side'
-            ? [1.5, 0, 0]
-            : VIEW === 'top'
-              ? [0, 1.5, 0.01]
-              : [0, 0, 1.5]
-          : SHOW_PARTS
-            ? PARTS_CAM
-            : SHOW_STACK
-              ? [4.2, 2.2, 4.6]
-              : ROBOT_CAM,
+        position: SHOW_TOOL
+          ? [0.45, 0.45, 0.55]
+          : SHOW_WRIST
+            ? VIEW === 'side'
+              ? [1.5, 0, 0]
+              : VIEW === 'top'
+                ? [0, 1.5, 0.01]
+                : [0, 0, 1.5]
+            : SHOW_PARTS
+              ? PARTS_CAM
+              : SHOW_STACK
+                ? [4.2, 2.2, 4.6]
+                : ROBOT_CAM,
         fov: 42,
       }}
       gl={{ antialias: true, alpha: false }}
@@ -70,7 +74,12 @@ export function Scene() {
       <spotLight position={[-2, 6, 3]} angle={0.6} penumbra={0.8} intensity={12} color="#ffffff" />
 
       <Suspense fallback={null}>
-        {SHOW_WRIST ? (
+        {SHOW_TOOL ? (
+          <group position={[0, 0.05, 0]}>
+            <axesHelper args={[0.25]} />
+            <Tool />
+          </group>
+        ) : SHOW_WRIST ? (
           <BxWristParts />
         ) : SHOW_STACK ? (
           <BxStack />
@@ -106,10 +115,10 @@ export function Scene() {
 
       <OrbitControls
         enablePan
-        minDistance={1.8}
+        minDistance={SHOW_TOOL ? 0.2 : 1.8}
         maxDistance={16}
         maxPolarAngle={Math.PI / 2.05}
-        target={SHOW_WRIST ? [0, 0, 0] : SHOW_PARTS ? [0, 0.4, 0] : [0, 1.25, 0]}
+        target={SHOW_TOOL ? [0, 0.2, 0.1] : SHOW_WRIST ? [0, 0, 0] : SHOW_PARTS ? [0, 0.4, 0] : [0, 1.25, 0]}
         makeDefault
       />
 

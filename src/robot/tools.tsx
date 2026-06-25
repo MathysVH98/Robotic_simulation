@@ -2,14 +2,14 @@
 // the store; each tool animates from the engine's `grip` value (1 = open,
 // 0 = closed). Tools are modelled extending +Y (the flange/tool axis).
 
-import { useRef } from 'react'
+import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { RoundedBox } from '@react-three/drei'
 import * as THREE from 'three'
 import { useRobotStore, type ToolId } from '../store/useRobotStore'
 
 export const TOOLS: { id: ToolId; name: string }[] = [
-  { id: 'weldgun', name: 'Weld Gun' },
+  { id: 'weldgun', name: 'Arc Torch' },
   { id: 'gripper', name: 'Gripper' },
   { id: 'none', name: 'Flange' },
 ]
@@ -17,8 +17,8 @@ export const TOOLS: { id: ToolId; name: string }[] = [
 const STEEL = '#9aa1ad'
 const DARK = '#26292f'
 const BLACK = '#181a1e'
+const BRASS = '#c8a44e'
 const COPPER = '#c0764a'
-const RED = '#d8202a'
 
 function Std({ color, metal = 0.6, rough = 0.4 }: { color: string; metal?: number; rough?: number }) {
   return <meshStandardMaterial color={color} metalness={metal} roughness={rough} />
@@ -69,45 +69,84 @@ function Gripper() {
   )
 }
 
-// --------------------------------------------------------------- Weld gun
+// ------------------------------------------------------------- Arc torch
+// MIG/gooseneck welding torch: bracket → torch body → curved neck → gas
+// nozzle, with a trailing cable and an arc flash at the tip when welding.
 function WeldGun() {
   const engine = useRobotStore((s) => s.engine)
-  const arm = useRef<THREE.Group>(null) // movable upper electrode
-  useFrame(() => {
-    // grip 0 = closed (weld), 1 = open: animate the electrode gap
-    if (arm.current) arm.current.position.y = 0.24 + engine.grip * 0.07
+  const arc = useRef<THREE.Mesh>(null)
+  const flash = useRef<THREE.PointLight>(null)
+
+  // Curved gooseneck (tool axis = +Y, work direction bends toward +Z).
+  const neck = useMemo(() => {
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.05, 0),
+      new THREE.Vector3(0, 0.16, 0.0),
+      new THREE.Vector3(0, 0.25, 0.05),
+      new THREE.Vector3(0, 0.31, 0.15),
+      new THREE.Vector3(0, 0.33, 0.25),
+    ])
+    return new THREE.TubeGeometry(curve, 40, 0.016, 14, false)
+  }, [])
+
+  // Power/gas cable trailing back to the arm.
+  const cable = useMemo(() => {
+    const curve = new THREE.CatmullRomCurve3([
+      new THREE.Vector3(0, 0.06, -0.03),
+      new THREE.Vector3(0.04, 0.0, -0.12),
+      new THREE.Vector3(0.0, -0.12, -0.16),
+      new THREE.Vector3(-0.06, -0.24, -0.1),
+    ])
+    return new THREE.TubeGeometry(curve, 28, 0.013, 10, false)
+  }, [])
+
+  useFrame((state) => {
+    const welding = engine.grip < 0.5 // GRIP CLOSE = arc on
+    if (arc.current) {
+      arc.current.visible = welding
+      // flicker
+      const s = welding ? 0.8 + 0.25 * Math.sin(state.clock.elapsedTime * 60) : 0
+      arc.current.scale.setScalar(s)
+    }
+    if (flash.current) flash.current.intensity = welding ? 6 + 3 * Math.sin(state.clock.elapsedTime * 50) : 0
   })
+
   return (
     <group>
       <MountPlate />
-      {/* transformer body */}
-      <RoundedBox position={[0, 0.11, -0.02]} args={[0.16, 0.18, 0.16]} radius={0.02} smoothness={3} castShadow>
-        <Std color={BLACK} metal={0.3} rough={0.55} />
+      {/* clamp bracket */}
+      <RoundedBox position={[0, 0.06, 0]} args={[0.07, 0.09, 0.09]} radius={0.015} smoothness={3} castShadow>
+        <Std color={DARK} metal={0.5} rough={0.45} />
       </RoundedBox>
-      <mesh position={[0.085, 0.11, -0.02]} castShadow>
-        <boxGeometry args={[0.02, 0.12, 0.1]} />
-        <Std color={RED} metal={0.3} rough={0.5} />
+      {/* torch body / handle holder */}
+      <mesh position={[0, 0.12, 0]} castShadow>
+        <cylinderGeometry args={[0.026, 0.03, 0.13, 20]} />
+        <Std color={BLACK} metal={0.4} rough={0.5} />
       </mesh>
-      {/* fixed lower electrode arm (the "C") */}
-      <mesh position={[0, 0.06, 0.16]} castShadow>
-        <boxGeometry args={[0.04, 0.04, 0.32]} />
-        <Std color={STEEL} metal={0.6} rough={0.4} />
+      {/* gooseneck */}
+      <mesh geometry={neck} castShadow>
+        <Std color={BRASS} metal={0.8} rough={0.3} />
       </mesh>
-      <mesh position={[0, 0.14, 0.31]} castShadow>
-        <cylinderGeometry args={[0.016, 0.022, 0.12, 18]} />
-        <Std color={COPPER} metal={0.85} rough={0.25} />
+      {/* gas nozzle at the tip (aligned with the neck's forward tangent) */}
+      <mesh position={[0, 0.335, 0.27]} rotation={[Math.PI / 2.3, 0, 0]} castShadow>
+        <cylinderGeometry args={[0.026, 0.022, 0.07, 18]} />
+        <Std color={STEEL} metal={0.55} rough={0.4} />
       </mesh>
-      {/* movable upper electrode */}
-      <group ref={arm} position={[0, 0.24, 0.31]}>
-        <mesh castShadow>
-          <cylinderGeometry args={[0.022, 0.016, 0.12, 18]} />
-          <Std color={COPPER} metal={0.85} rough={0.25} />
-        </mesh>
-        <mesh position={[0, 0.1, -0.06]} castShadow>
-          <boxGeometry args={[0.04, 0.12, 0.04]} />
-          <Std color={STEEL} metal={0.6} rough={0.4} />
-        </mesh>
-      </group>
+      {/* contact tip / wire */}
+      <mesh position={[0, 0.335, 0.305]} rotation={[Math.PI / 2.3, 0, 0]}>
+        <cylinderGeometry args={[0.004, 0.004, 0.05, 8]} />
+        <Std color={COPPER} metal={0.9} rough={0.2} />
+      </mesh>
+      {/* cable */}
+      <mesh geometry={cable} castShadow>
+        <Std color={BLACK} metal={0.1} rough={0.85} />
+      </mesh>
+      {/* arc flash */}
+      <mesh ref={arc} position={[0, 0.335, 0.33]}>
+        <sphereGeometry args={[0.013, 12, 12]} />
+        <meshBasicMaterial color="#dbeaff" toneMapped={false} />
+      </mesh>
+      <pointLight ref={flash} position={[0, 0.335, 0.33]} color="#bcd8ff" distance={1.2} intensity={0} />
     </group>
   )
 }

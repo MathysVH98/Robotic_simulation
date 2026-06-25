@@ -48,12 +48,12 @@ export function Telemetry() {
       </div>
       {tool !== 'none' && (
         <div className="grip-row">
-          <span className="grip-label">{tool === 'weldgun' ? 'SPOT GUN' : 'GRIPPER'}</span>
+          <span className="grip-label">{tool === 'weldgun' ? 'ARC TORCH' : 'GRIPPER'}</span>
           <span className={`grip-state ${grip > 0.5 ? 'open' : 'closed'}`}>
             {tool === 'weldgun'
               ? grip > 0.5
-                ? 'OPEN'
-                : '● WELD'
+                ? 'IDLE'
+                : '● ARC'
               : grip > 0.5
                 ? 'OPEN'
                 : 'CLOSED'}
