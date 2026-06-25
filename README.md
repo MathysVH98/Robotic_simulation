@@ -5,9 +5,10 @@ robot, run it, and watch a 3D Kawasaki arm execute the motion** in real time.
 
 Built with **Vite + React + TypeScript**, **React Three Fiber** for the 3D cell,
 and **CodeMirror** for the program editor. The first supported robot is the
-**Kawasaki BX200L** body-shop spot-welding robot, modelled to its published
-spec (200 kg payload, 2,597 mm reach, 6 axes, hollow wrist + C-type weld gun).
-The kinematic chain is parametric, so other robot models can be added later.
+**Kawasaki BX200L** body-shop spot-welding robot, rendered from its **genuine
+CAD meshes** (binary STL, one per link) assembled with the standard Kawasaki 6R
+kinematic convention. The loader is parametric, so other robot models can be
+dropped in by adding their meshes + link lengths.
 
 ### Modelled BX200L specification
 
@@ -24,11 +25,11 @@ The kinematic chain is parametric, so other robot models can be added later.
 
 ## Features
 
-- **3D robot cell** — a procedurally-modelled Kawasaki **BX200L** with a correct
-  6-axis kinematic chain (base swivel → lower arm → upper arm → 3-axis hollow
-  wrist → spot-welding gun), JT2 counterweight, side motor housings, Kawasaki
-  silver livery, studio lighting, shop-floor grid, contact shadows and
-  orbit/pinch camera. Zero pose is the Kawasaki calibration stance.
+- **3D robot cell** — the real Kawasaki **BX200L** rendered from its CAD meshes,
+  with a correct 6-axis kinematic chain (base swivel → lower arm → upper arm →
+  3-axis hollow wrist → flange) and the factory livery (white base/lower-arm,
+  black upper-arm and wrist). Studio lighting, shop-floor grid, contact shadows
+  and orbit/pinch camera.
 - **Program editor** — write motion programs in a simplified **Kawasaki
   AS-style** teaching language. The currently-executing line is highlighted live.
 - **Deterministic simulator** — programs compile to a motion plan and play back
