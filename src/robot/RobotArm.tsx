@@ -15,13 +15,16 @@ const D2R = Math.PI / 180
 const H = Math.PI / 2
 
 // --- BX200L link lengths [m] (calibrated to the CAD meshes) -----------------
+// In-line wrist: from the elbow the chain runs along +Y of each link frame.
+// Joint axes: JT2/JT3 hinge about Z (frame), JT4 roll about Y (boom axis),
+// JT5 bend about X, JT6 twist about Y (tool axis).
 const L = {
   j0: 0.49, // base → JT2 (vertical)
   j1: 0.2, // JT1 → JT2 lateral offset
-  j2: 1.3, // lower arm  JT2 → JT3
-  j3: 0.3, // JT3 → JT4
-  j4: 0.55, // upper arm  JT4 → JT5 (forearm, along -Y in CAD frame)
-  j5: 0.24, // wrist JT5 → JT6
+  j2: 1.3, // lower arm   JT2 → JT3 (elbow)
+  j3: 0.67, // upper arm  JT3 → JT4 (roll), along the boom (+Y)
+  j4: 0.1, // JT4 → JT5 (bend), fork height
+  j5: 0.19, // JT5 → JT6 (twist), to the tool flange
 }
 
 // BX200L livery (per the reference photo): white body, black upper arm + wrist.
@@ -31,16 +34,13 @@ const FLANGE = '#c7ccd1' // tool flange
 
 // Rendered rest-posture offset (deg) so HOME (0,0,0,0,0,0) shows a natural
 // upright industrial stance instead of the CAD's folded mechanical zero.
-const REST = [0, -20, 55, 0, 35, 0]
+const REST = [0, -18, 52, 0, 18, 0]
 
 const DEBUG = typeof window !== 'undefined' && window.location.search.includes('debug')
 const DBG = ['#ff6b6b', '#ffd166', '#06d6a0', '#4cc9f0', '#b5179e', '#fb8500', '#ffffff']
 
-// URL-tunable JT6 transform for calibration: ?j6x=&j6y=&j6z=&j6ry=&j6rz=
-const Q = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
-const qn = (k: string, d: number) => (Q.has(k) ? Number(Q.get(k)) : d)
-const J6_OFF: [number, number, number] = [qn('j6x', 0), qn('j6y', 0), qn('j6z', -0.12)]
-const J6_ROT: [number, number, number] = [qn('j6rx', 0), qn('j6ry', Math.PI / 2), qn('j6rz', 0)]
+const Q =
+  typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
 
 function Link({
   geom,
@@ -109,13 +109,14 @@ export function RobotArm() {
       p[4] + REST[4],
       p[5] + REST[5],
     ]
-    // URDF axis signs: j1 -Z, j2 +Z, j3 -Z, j4 +Z, j5 -Z, j6 +Z
+    // Base + shoulder + elbow hinge about the frame Z; the in-line wrist rolls
+    // about Y (JT4), bends about X (JT5) and twists about Y (JT6).
     if (j1.current) j1.current.rotation.z = -rp[0] * D2R
     if (j2.current) j2.current.rotation.z = rp[1] * D2R
     if (j3.current) j3.current.rotation.z = -rp[2] * D2R
-    if (j4.current) j4.current.rotation.z = rp[3] * D2R
-    if (j5.current) j5.current.rotation.z = -rp[4] * D2R
-    if (j6.current) j6.current.rotation.z = rp[5] * D2R
+    if (j4.current) j4.current.rotation.y = rp[3] * D2R
+    if (j5.current) j5.current.rotation.x = rp[4] * D2R
+    if (j6.current) j6.current.rotation.y = rp[5] * D2R
   })
 
   return (
@@ -137,22 +138,22 @@ export function RobotArm() {
               {/* JT3 */}
               <group position={[L.j2, 0, 0]}>
                 <group ref={j3}>
-                  <Link geom={g[3]} idx={3} color={WHITE} rotation={[0, H, 0]} />
+                  <Link geom={g[3]} idx={3} color={BLACK} rotation={[0, H, 0]} />
 
-                  {/* JT4 */}
-                  <group position={[L.j3, 0, 0]} rotation={[0, H, 0]}>
+                  {/* JT4 — forearm roll about the boom axis (+Y), at the boom tip */}
+                  <group position={[0, L.j3, 0]}>
                     <group ref={j4}>
                       {DEBUG && <axesHelper args={[0.4]} />}
                       <Link geom={g[4]} idx={4} color={BLACK} />
 
-                      {/* JT5 */}
-                      <group position={[0, -L.j4, 0]} rotation={[0, -H, 0]}>
+                      {/* JT5 — wrist bend about X, at the fork */}
+                      <group position={[0, L.j4, 0]}>
                         <group ref={j5}>
                           {DEBUG && <axesHelper args={[0.4]} />}
-                          <Link geom={g[5]} idx={5} color={WHITE} rotation={[0, H, 0]} />
+                          <Link geom={g[5]} idx={5} color={WHITE} />
 
-                          {/* JT6 */}
-                          <group position={J6_OFF} rotation={J6_ROT}>
+                          {/* JT6 — tool twist about Y, at the flange */}
+                          <group position={[0, L.j5, 0]}>
                             <group ref={j6}>
                               {DEBUG && <axesHelper args={[0.4]} />}
                               <Link geom={g[6]} idx={6} color={FLANGE} />

@@ -44,8 +44,23 @@ function Header() {
   )
 }
 
+const INSPECT =
+  typeof window !== 'undefined' &&
+  /[?&](wrist|parts|stack)\b/.test(window.location.search)
+
 export default function App() {
   const [view, setView] = useState<MobileView>('cell')
+
+  // Fullscreen 3D inspector mode (debug): bypass the HMI for clear mesh views.
+  if (INSPECT) {
+    return (
+      <div style={{ position: 'fixed', inset: 0 }}>
+        <div className="viewport" style={{ width: '100%', height: '100%', borderRadius: 0 }}>
+          <Scene />
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="app">

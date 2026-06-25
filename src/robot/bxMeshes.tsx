@@ -32,6 +32,28 @@ export function BxStack() {
   )
 }
 
+/** Debug: a single mesh centred at origin with its local axes (?wrist=N). */
+export function BxWristParts() {
+  const geoms = useBxGeometries()
+  const param =
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('wrist') : null
+  const j = param && /^[0-6]$/.test(param) ? Number(param) : 4
+  const g = geoms[j]
+  return (
+    <group>
+      <axesHelper args={[0.4]} />
+      <mesh geometry={g} scale={MM}>
+        <meshStandardMaterial color="#cfd3d7" metalness={0.3} roughness={0.55} flatShading />
+      </mesh>
+      <Html position={[0, -0.35, 0]} center>
+        <div style={{ font: '12px ui-monospace,monospace', color: '#cfe0ff', background: 'rgba(10,14,20,0.85)', padding: '3px 6px', borderRadius: 4, whiteSpace: 'nowrap' }}>
+          J{j}  (red=X grn=Y blu=Z)
+        </div>
+      </Html>
+    </group>
+  )
+}
+
 /** Debug: lay each link mesh out in a row with its own local axes + bbox label. */
 export function BxPartsGrid() {
   const geoms = useBxGeometries()

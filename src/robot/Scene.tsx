@@ -11,10 +11,11 @@ import {
   GizmoViewport,
 } from '@react-three/drei'
 import { RobotArm } from './RobotArm'
-import { BxPartsGrid, BxStack } from './bxMeshes'
+import { BxPartsGrid, BxStack, BxWristParts } from './bxMeshes'
 
 const SHOW_PARTS = typeof window !== 'undefined' && window.location.search.includes('parts')
 const SHOW_STACK = typeof window !== 'undefined' && window.location.search.includes('stack')
+const SHOW_WRIST = typeof window !== 'undefined' && window.location.search.includes('wrist')
 const VIEW = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('view') : null
 const PARTS_CAM: [number, number, number] =
   VIEW === 'side' ? [8, 0.4, 0] : VIEW === 'top' ? [0, 8, 0.01] : [0, 0.4, 8]
@@ -32,7 +33,20 @@ export function Scene() {
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: SHOW_PARTS ? PARTS_CAM : SHOW_STACK ? [4.2, 2.2, 4.6] : ROBOT_CAM, fov: 42 }}
+      camera={{
+        position: SHOW_WRIST
+          ? VIEW === 'side'
+            ? [1.5, 0, 0]
+            : VIEW === 'top'
+              ? [0, 1.5, 0.01]
+              : [0, 0, 1.5]
+          : SHOW_PARTS
+            ? PARTS_CAM
+            : SHOW_STACK
+              ? [4.2, 2.2, 4.6]
+              : ROBOT_CAM,
+        fov: 42,
+      }}
       gl={{ antialias: true, alpha: false }}
     >
       <color attach="background" args={['#0a0e14']} />
@@ -56,7 +70,15 @@ export function Scene() {
       <spotLight position={[-2, 6, 3]} angle={0.6} penumbra={0.8} intensity={12} color="#ffffff" />
 
       <Suspense fallback={null}>
-        {SHOW_STACK ? <BxStack /> : SHOW_PARTS ? <BxPartsGrid /> : <RobotArm />}
+        {SHOW_WRIST ? (
+          <BxWristParts />
+        ) : SHOW_STACK ? (
+          <BxStack />
+        ) : SHOW_PARTS ? (
+          <BxPartsGrid />
+        ) : (
+          <RobotArm />
+        )}
       </Suspense>
 
       {/* Shop floor */}
@@ -87,7 +109,7 @@ export function Scene() {
         minDistance={1.8}
         maxDistance={16}
         maxPolarAngle={Math.PI / 2.05}
-        target={SHOW_PARTS ? [0, 0.4, 0] : [0, 1.25, 0]}
+        target={SHOW_WRIST ? [0, 0, 0] : SHOW_PARTS ? [0, 0.4, 0] : [0, 1.25, 0]}
         makeDefault
       />
 
