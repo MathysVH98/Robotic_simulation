@@ -16,7 +16,7 @@ export function Scene() {
     <Canvas
       shadows
       dpr={[1, 2]}
-      camera={{ position: [3.2, 2.6, 3.6], fov: 42 }}
+      camera={{ position: [4.0, 2.4, 4.6], fov: 42 }}
       gl={{ antialias: true, alpha: false }}
     >
       <color attach="background" args={['#0a0e14']} />
@@ -66,10 +66,10 @@ export function Scene() {
 
       <OrbitControls
         enablePan
-        minDistance={1.6}
-        maxDistance={12}
+        minDistance={1.8}
+        maxDistance={16}
         maxPolarAngle={Math.PI / 2.05}
-        target={[0, 1.0, 0]}
+        target={[0, 1.25, 0]}
         makeDefault
       />
 

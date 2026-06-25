@@ -5,14 +5,14 @@ export type JointAngles = [number, number, number, number, number, number]
 
 export const JOINT_NAMES = ['JT1', 'JT2', 'JT3', 'JT4', 'JT5', 'JT6'] as const
 
-/** Mechanical limits (deg) for each axis — loosely modelled on a Kawasaki RS-series arm. */
+/** Mechanical limits (deg) for each axis — Kawasaki BX200L body-shop robot. */
 export const JOINT_LIMITS: Array<{ min: number; max: number }> = [
-  { min: -180, max: 180 }, // JT1 base swivel
-  { min: -90, max: 135 }, // JT2 shoulder
-  { min: -120, max: 120 }, // JT3 elbow
-  { min: -180, max: 180 }, // JT4 wrist roll
-  { min: -135, max: 135 }, // JT5 wrist bend
-  { min: -360, max: 360 }, // JT6 flange
+  { min: -160, max: 160 }, // JT1 base swivel   (±160°)
+  { min: -60, max: 76 }, // JT2 lower arm      (+76 ~ -60°)
+  { min: -75, max: 90 }, // JT3 upper arm      (+90 ~ -75°)
+  { min: -210, max: 210 }, // JT4 wrist twist    (±210°)
+  { min: -125, max: 125 }, // JT5 wrist bend     (±125°)
+  { min: -210, max: 210 }, // JT6 flange roll    (±210°)
 ]
 
 export const HOME_POSE: JointAngles = [0, 0, 0, 0, 0, 0]

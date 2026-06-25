@@ -33,7 +33,7 @@ function Header() {
       <div className="header-right">
         <div className="robot-tag">
           <span className="robot-make">KAWASAKI</span>
-          <span className="robot-model">RS‑series · 6‑Axis</span>
+          <span className="robot-model">BX200L · 6‑Axis · 200 kg</span>
         </div>
         <div className={`status-pill status-${status}`}>
           <span className="status-led" />

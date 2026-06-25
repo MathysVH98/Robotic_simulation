@@ -9,31 +9,36 @@ export interface Example {
 
 export const EXAMPLES: Example[] = [
   {
-    id: 'pick-place',
-    name: 'Pick & Place',
-    description: 'A classic material-handling cycle: approach, grip, lift, transfer, release.',
-    code: `; --- Pick & Place cycle ---
+    id: 'spot-weld',
+    name: 'Spot Weld Seam',
+    description: 'Body-shop spot-welding cycle: approach each weld point, close the gun, weld, retract.',
+    code: `; --- Spot welding sequence (BX200L) ---
+; GRIP CLOSE = electrodes close & weld, GRIP OPEN = retract
 SPEED 60
 HOME
 
-; Move above the pick point
-JMOVE 45, 35, -20, 0, 45, 0
+; Approach the panel
+JMOVE 40, 35, -15, 0, 50, 0
 GRIP OPEN
 
-; Descend and grip the part
-MOVE JT2 60
+; Weld point 1
+MOVE JT2 48
 GRIP CLOSE
-DELAY 0.5
-
-; Lift and swing to the place point
-MOVE JT2 35
-JMOVE -45, 35, -20, 0, 45, 0
-
-; Place the part
-MOVE JT2 60
+DELAY 0.4
 GRIP OPEN
-DELAY 0.5
 MOVE JT2 35
+
+; Weld point 2
+JMOVE 10, 40, -20, 0, 55, 0
+GRIP CLOSE
+DELAY 0.4
+GRIP OPEN
+
+; Weld point 3
+JMOVE -25, 38, -18, 0, 52, 0
+GRIP CLOSE
+DELAY 0.4
+GRIP OPEN
 
 HOME`,
   },

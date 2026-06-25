@@ -46,9 +46,9 @@ export function Telemetry() {
         })}
       </div>
       <div className="grip-row">
-        <span className="grip-label">GRIPPER</span>
+        <span className="grip-label">SPOT GUN</span>
         <span className={`grip-state ${grip > 0.5 ? 'open' : 'closed'}`}>
-          {grip > 0.5 ? 'OPEN' : 'CLOSED'}
+          {grip > 0.5 ? 'OPEN' : '● WELD'}
         </span>
       </div>
     </div>

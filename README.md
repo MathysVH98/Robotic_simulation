@@ -4,23 +4,37 @@ A mobile-first training app where trainees **write a program for an industrial
 robot, run it, and watch a 3D Kawasaki arm execute the motion** in real time.
 
 Built with **Vite + React + TypeScript**, **React Three Fiber** for the 3D cell,
-and **CodeMirror** for the program editor. The first supported robot is a
-6-axis Kawasaki RS-series–style arm; the architecture is parametric so other
-robots can be added later.
+and **CodeMirror** for the program editor. The first supported robot is the
+**Kawasaki BX200L** body-shop spot-welding robot, modelled to its published
+spec (200 kg payload, 2,597 mm reach, 6 axes, hollow wrist + C-type weld gun).
+The kinematic chain is parametric, so other robot models can be added later.
+
+### Modelled BX200L specification
+
+| | |
+|---|---|
+| Payload | 200 kg |
+| Horizontal reach | 2,597 mm |
+| Vertical reach | 3,420 mm |
+| Repeatability | ±0.2 mm |
+| Axis ranges | JT1 ±160° · JT2 +76/−60° · JT3 +90/−75° · JT4 ±210° · JT5 ±125° · JT6 ±210° |
+| End effector | C-type spot-welding gun (electrodes driven by `GRIP`) |
 
 ![cell](docs/preview.png)
 
 ## Features
 
-- **3D robot cell** — a procedurally-modelled 6-axis Kawasaki arm with a correct
-  kinematic chain (base swivel → shoulder → elbow → 3-axis wrist → gripper),
-  studio lighting, shop-floor grid, contact shadows and orbit/pinch camera.
+- **3D robot cell** — a procedurally-modelled Kawasaki **BX200L** with a correct
+  6-axis kinematic chain (base swivel → lower arm → upper arm → 3-axis hollow
+  wrist → spot-welding gun), JT2 counterweight, side motor housings, Kawasaki
+  silver livery, studio lighting, shop-floor grid, contact shadows and
+  orbit/pinch camera. Zero pose is the Kawasaki calibration stance.
 - **Program editor** — write motion programs in a simplified **Kawasaki
   AS-style** teaching language. The currently-executing line is highlighted live.
 - **Deterministic simulator** — programs compile to a motion plan and play back
   with eased joint interpolation. Transport controls: **Run / Pause / Step /
   Reset** plus a **0.25×–3× speed override**.
-- **Live telemetry** — per-axis angle readouts with travel bars and gripper
+- **Live telemetry** — per-axis angle readouts with travel bars and spot-gun
   state, updated from the simulation clock.
 - **Controller log** — compile diagnostics (limit violations, syntax errors) and
   a running execution trace.
@@ -47,23 +61,26 @@ Case-insensitive. Comments start with `;` or `#`.
 | `MOVE JT<n> <deg>` | Move one axis to an absolute angle |
 | `JOG JT<n> <deg>` | Move one axis by a relative amount |
 | `DELAY <seconds>` | Hold the current pose |
-| `GRIP OPEN` / `GRIP CLOSE` | Actuate the end-effector |
+| `GRIP OPEN` / `GRIP CLOSE` | Open / close the spot-gun electrodes (weld) |
 | `LOOP <n> … ENDLOOP` | Repeat a block N times (nestable) |
 
 Joint targets that exceed each axis's mechanical limit are flagged in the
-console and clamped. Three starter programs (**Pick & Place**, **Palletizing
+console and clamped. Three starter programs (**Spot Weld Seam**, **Palletizing
 Loop**, **Range of Motion**) ship in the **PROGRAMS** chips.
 
 ```
-; Pick & place a part
+; Spot weld two points on a panel
 SPEED 60
 HOME
-JMOVE 45, 35, -20, 0, 45, 0
+JMOVE 40, 35, -15, 0, 50, 0
 GRIP OPEN
-MOVE JT2 60
+MOVE JT2 48
+GRIP CLOSE      ; electrodes close → weld
+DELAY 0.4
+GRIP OPEN       ; retract
+JMOVE 10, 40, -20, 0, 55, 0
 GRIP CLOSE
-MOVE JT2 35
-JMOVE -45, 35, -20, 0, 45, 0
+DELAY 0.4
 GRIP OPEN
 HOME
 ```
