@@ -32,7 +32,7 @@ export const DEFAULT_CALIB = {
   // Hand-calibrated wrist (JT4 roll, JT5 bend, JT6 twist).
   j4: { off: [0.2, 1.0, 0], rot: [0, 0, 0], axis: 'x', sign: -1 } as JointCfg,
   j5: { off: [0, 0.035, 0], rot: [-10, 0, 0], axis: 'x', sign: 1 } as JointCfg,
-  j6: { off: [0, 0, 0], rot: [0, 0, 0], axis: 'y', sign: 1 } as JointCfg,
+  j6: { off: [-0.01, 0.215, -0.035], rot: [0, 0, 0], axis: 'y', sign: 1 } as JointCfg,
   rest: [0, -18, 52, 0, 18, 0],
 }
 
