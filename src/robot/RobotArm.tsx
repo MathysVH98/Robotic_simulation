@@ -5,7 +5,7 @@
 // The chain is built in the URDF Z-up frame and the whole robot is tipped to the
 // scene's Y-up frame at the root. Each joint group rotates about its local Z.
 
-import { useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useRobotStore } from '../store/useRobotStore'
@@ -28,6 +28,10 @@ const L = {
 const WHITE = '#edeff1' // base, turret, lower arm
 const BLACK = '#1e2024' // upper arm, forearm, wrist housings
 const FLANGE = '#c7ccd1' // tool flange
+
+// Rendered rest-posture offset (deg) so HOME (0,0,0,0,0,0) shows a natural
+// upright industrial stance instead of the CAD's folded mechanical zero.
+const REST = [0, -20, 55, 0, 35, 0]
 
 const DEBUG = typeof window !== 'undefined' && window.location.search.includes('debug')
 const DBG = ['#ff6b6b', '#ffd166', '#06d6a0', '#4cc9f0', '#b5179e', '#fb8500', '#ffffff']
@@ -79,15 +83,39 @@ export function RobotArm() {
   const j6 = useRef<THREE.Group>(null)
   const engine = useRobotStore((s) => s.engine)
 
+  // Optional pose override for screenshots/hero shots: ?pose=j1,j2,j3,j4,j5,j6
+  useEffect(() => {
+    const p = Q.get('pose')
+    if (p) {
+      const v = p.split(',').map(Number)
+      if (v.length === 6 && v.every((n) => Number.isFinite(n))) {
+        engine.pose = v as unknown as typeof engine.pose
+      }
+    }
+  }, [engine])
+
   useFrame(() => {
     const p = engine.pose
+    // The CAD mechanical zero is a folded calibration pose. Anchor the displayed
+    // HOME (all joints 0) to a natural industrial "ready" stance — lower arm
+    // slightly back, upper arm raised, wrist level — matching how a real robot
+    // rests. Joint read-outs stay honest (0 at HOME); only the rendered rest
+    // posture is offset.
+    const rp = [
+      p[0] + REST[0],
+      p[1] + REST[1],
+      p[2] + REST[2],
+      p[3] + REST[3],
+      p[4] + REST[4],
+      p[5] + REST[5],
+    ]
     // URDF axis signs: j1 -Z, j2 +Z, j3 -Z, j4 +Z, j5 -Z, j6 +Z
-    if (j1.current) j1.current.rotation.z = -p[0] * D2R
-    if (j2.current) j2.current.rotation.z = p[1] * D2R
-    if (j3.current) j3.current.rotation.z = -p[2] * D2R
-    if (j4.current) j4.current.rotation.z = p[3] * D2R
-    if (j5.current) j5.current.rotation.z = -p[4] * D2R
-    if (j6.current) j6.current.rotation.z = p[5] * D2R
+    if (j1.current) j1.current.rotation.z = -rp[0] * D2R
+    if (j2.current) j2.current.rotation.z = rp[1] * D2R
+    if (j3.current) j3.current.rotation.z = -rp[2] * D2R
+    if (j4.current) j4.current.rotation.z = rp[3] * D2R
+    if (j5.current) j5.current.rotation.z = -rp[4] * D2R
+    if (j6.current) j6.current.rotation.z = rp[5] * D2R
   })
 
   return (
@@ -109,7 +137,7 @@ export function RobotArm() {
               {/* JT3 */}
               <group position={[L.j2, 0, 0]}>
                 <group ref={j3}>
-                  <Link geom={g[3]} idx={3} color={BLACK} rotation={[0, H, 0]} />
+                  <Link geom={g[3]} idx={3} color={WHITE} rotation={[0, H, 0]} />
 
                   {/* JT4 */}
                   <group position={[L.j3, 0, 0]} rotation={[0, H, 0]}>
@@ -121,7 +149,7 @@ export function RobotArm() {
                       <group position={[0, -L.j4, 0]} rotation={[0, -H, 0]}>
                         <group ref={j5}>
                           {DEBUG && <axesHelper args={[0.4]} />}
-                          <Link geom={g[5]} idx={5} color={BLACK} rotation={[0, H, 0]} />
+                          <Link geom={g[5]} idx={5} color={WHITE} rotation={[0, H, 0]} />
 
                           {/* JT6 */}
                           <group position={J6_OFF} rotation={J6_ROT}>
