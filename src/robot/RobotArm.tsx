@@ -9,22 +9,19 @@ import { useEffect, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import * as THREE from 'three'
 import { useRobotStore } from '../store/useRobotStore'
+import { useCalib } from '../store/useCalib'
 import { useBxGeometries, MM } from './bxMeshes'
 
 const D2R = Math.PI / 180
 const H = Math.PI / 2
 
-// --- BX200L link lengths [m] (calibrated to the CAD meshes) -----------------
-// In-line wrist: from the elbow the chain runs along +Y of each link frame.
-// Joint axes: JT2/JT3 hinge about Z (frame), JT4 roll about Y (boom axis),
-// JT5 bend about X, JT6 twist about Y (tool axis).
+// --- BX200L link lengths [m] for the lower arm (fixed) ----------------------
+// The wrist (JT4–JT6) offsets/rotations/axes come from the calibration store so
+// they can be positioned by hand (CalibPanel, ?calib).
 const L = {
   j0: 0.49, // base → JT2 (vertical)
   j1: 0.2, // JT1 → JT2 lateral offset
-  j2: 1.3, // lower arm   JT2 → JT3 (elbow)
-  j3: 0.67, // upper arm  JT3 → JT4 (roll), along the boom (+Y)
-  j4: 0.1, // JT4 → JT5 (bend), fork height
-  j5: 0.19, // JT5 → JT6 (twist), to the tool flange
+  j2: 1.3, // lower arm  JT2 → JT3 (elbow)
 }
 
 // BX200L livery (per the reference photo): white body, black upper arm + wrist.
@@ -32,15 +29,24 @@ const WHITE = '#edeff1' // base, turret, lower arm
 const BLACK = '#1e2024' // upper arm, forearm, wrist housings
 const FLANGE = '#c7ccd1' // tool flange
 
-// Rendered rest-posture offset (deg) so HOME (0,0,0,0,0,0) shows a natural
-// upright industrial stance instead of the CAD's folded mechanical zero.
-const REST = [0, -18, 52, 0, 18, 0]
-
 const DEBUG = typeof window !== 'undefined' && window.location.search.includes('debug')
 const DBG = ['#ff6b6b', '#ffd166', '#06d6a0', '#4cc9f0', '#b5179e', '#fb8500', '#ffffff']
 
 const Q =
   typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+
+/** Rotate a joint group about a single local axis (deg), zeroing the others. */
+function setAxis(grp: THREE.Group | null, axis: 'x' | 'y' | 'z', deg: number) {
+  if (!grp) return
+  grp.rotation.set(0, 0, 0)
+  grp.rotation[axis] = deg * D2R
+}
+
+const degRot = (r: [number, number, number]): [number, number, number] => [
+  r[0] * D2R,
+  r[1] * D2R,
+  r[2] * D2R,
+]
 
 function Link({
   geom,
@@ -82,6 +88,10 @@ export function RobotArm() {
   const j5 = useRef<THREE.Group>(null)
   const j6 = useRef<THREE.Group>(null)
   const engine = useRobotStore((s) => s.engine)
+  const c4 = useCalib((s) => s.j4)
+  const c5 = useCalib((s) => s.j5)
+  const c6 = useCalib((s) => s.j6)
+  const REST = useCalib((s) => s.rest)
 
   // Optional pose override for screenshots/hero shots: ?pose=j1,j2,j3,j4,j5,j6
   useEffect(() => {
@@ -96,27 +106,17 @@ export function RobotArm() {
 
   useFrame(() => {
     const p = engine.pose
-    // The CAD mechanical zero is a folded calibration pose. Anchor the displayed
-    // HOME (all joints 0) to a natural industrial "ready" stance — lower arm
-    // slightly back, upper arm raised, wrist level — matching how a real robot
-    // rests. Joint read-outs stay honest (0 at HOME); only the rendered rest
-    // posture is offset.
-    const rp = [
-      p[0] + REST[0],
-      p[1] + REST[1],
-      p[2] + REST[2],
-      p[3] + REST[3],
-      p[4] + REST[4],
-      p[5] + REST[5],
-    ]
-    // Base + shoulder + elbow hinge about the frame Z; the in-line wrist rolls
-    // about Y (JT4), bends about X (JT5) and twists about Y (JT6).
+    // HOME (all joints 0) is anchored to a natural upright "ready" stance via
+    // REST; joint read-outs stay honest (0 at HOME).
+    const rp = p.map((v, i) => v + REST[i])
+    // Base + shoulder + elbow hinge about the frame Z.
     if (j1.current) j1.current.rotation.z = -rp[0] * D2R
     if (j2.current) j2.current.rotation.z = rp[1] * D2R
     if (j3.current) j3.current.rotation.z = -rp[2] * D2R
-    if (j4.current) j4.current.rotation.y = rp[3] * D2R
-    if (j5.current) j5.current.rotation.x = rp[4] * D2R
-    if (j6.current) j6.current.rotation.y = rp[5] * D2R
+    // In-line wrist — each joint rotates about its configured axis.
+    setAxis(j4.current, c4.axis, c4.sign * rp[3])
+    setAxis(j5.current, c5.axis, c5.sign * rp[4])
+    setAxis(j6.current, c6.axis, c6.sign * rp[5])
   })
 
   return (
@@ -140,23 +140,23 @@ export function RobotArm() {
                 <group ref={j3}>
                   <Link geom={g[3]} idx={3} color={BLACK} rotation={[0, H, 0]} />
 
-                  {/* JT4 — forearm roll about the boom axis (+Y), at the boom tip */}
-                  <group position={[0, L.j3, 0]}>
+                  {/* JT4 — forearm roll (calibratable) */}
+                  <group position={c4.off}>
                     <group ref={j4}>
                       {DEBUG && <axesHelper args={[0.4]} />}
-                      <Link geom={g[4]} idx={4} color={BLACK} />
+                      <Link geom={g[4]} idx={4} color={BLACK} rotation={degRot(c4.rot)} />
 
-                      {/* JT5 — wrist bend about X, at the fork */}
-                      <group position={[0, L.j4, 0]}>
+                      {/* JT5 — wrist bend (calibratable) */}
+                      <group position={c5.off}>
                         <group ref={j5}>
                           {DEBUG && <axesHelper args={[0.4]} />}
-                          <Link geom={g[5]} idx={5} color={WHITE} />
+                          <Link geom={g[5]} idx={5} color={WHITE} rotation={degRot(c5.rot)} />
 
-                          {/* JT6 — tool twist about Y, at the flange */}
-                          <group position={[0, L.j5, 0]}>
+                          {/* JT6 — tool twist (calibratable) */}
+                          <group position={c6.off}>
                             <group ref={j6}>
                               {DEBUG && <axesHelper args={[0.4]} />}
-                              <Link geom={g[6]} idx={6} color={FLANGE} />
+                              <Link geom={g[6]} idx={6} color={FLANGE} rotation={degRot(c6.rot)} />
                             </group>
                           </group>
                         </group>

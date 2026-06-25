@@ -4,6 +4,7 @@ import { CodeEditor } from './components/CodeEditor'
 import { Console } from './components/Console'
 import { Controls } from './components/Controls'
 import { Telemetry } from './components/Telemetry'
+import { CalibPanel } from './components/CalibPanel'
 import { useRobotStore } from './store/useRobotStore'
 
 type MobileView = 'cell' | 'program'
@@ -47,17 +48,20 @@ function Header() {
 const INSPECT =
   typeof window !== 'undefined' &&
   /[?&](wrist|parts|stack)\b/.test(window.location.search)
+const CALIB =
+  typeof window !== 'undefined' && /[?&]calib\b/.test(window.location.search)
 
 export default function App() {
   const [view, setView] = useState<MobileView>('cell')
 
-  // Fullscreen 3D inspector mode (debug): bypass the HMI for clear mesh views.
-  if (INSPECT) {
+  // Fullscreen 3D inspector / calibration mode (debug): bypass the HMI.
+  if (INSPECT || CALIB) {
     return (
       <div style={{ position: 'fixed', inset: 0 }}>
         <div className="viewport" style={{ width: '100%', height: '100%', borderRadius: 0 }}>
           <Scene />
         </div>
+        {CALIB && <CalibPanel />}
       </div>
     )
   }
