@@ -8,6 +8,7 @@ import { JOINT_LIMITS, JOINT_NAMES } from '../language/types'
 
 export function Telemetry() {
   const engine = useRobotStore((s) => s.engine)
+  const tool = useRobotStore((s) => s.tool)
   const [pose, setPose] = useState<number[]>([0, 0, 0, 0, 0, 0])
   const [grip, setGrip] = useState(0)
   const raf = useRef(0)
@@ -45,12 +46,20 @@ export function Telemetry() {
           )
         })}
       </div>
-      <div className="grip-row">
-        <span className="grip-label">SPOT GUN</span>
-        <span className={`grip-state ${grip > 0.5 ? 'open' : 'closed'}`}>
-          {grip > 0.5 ? 'OPEN' : '● WELD'}
-        </span>
-      </div>
+      {tool !== 'none' && (
+        <div className="grip-row">
+          <span className="grip-label">{tool === 'weldgun' ? 'SPOT GUN' : 'GRIPPER'}</span>
+          <span className={`grip-state ${grip > 0.5 ? 'open' : 'closed'}`}>
+            {tool === 'weldgun'
+              ? grip > 0.5
+                ? 'OPEN'
+                : '● WELD'
+              : grip > 0.5
+                ? 'OPEN'
+                : 'CLOSED'}
+          </span>
+        </div>
+      )}
     </div>
   )
 }

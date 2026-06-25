@@ -11,6 +11,7 @@ import * as THREE from 'three'
 import { useRobotStore } from '../store/useRobotStore'
 import { useCalib } from '../store/useCalib'
 import { useBxGeometries, MM } from './bxMeshes'
+import { Tool } from './tools'
 
 const D2R = Math.PI / 180
 const H = Math.PI / 2
@@ -28,6 +29,9 @@ const L = {
 const WHITE = '#edeff1' // base, turret, lower arm
 const BLACK = '#1e2024' // upper arm, forearm, wrist housings
 const FLANGE = '#c7ccd1' // tool flange
+
+// Where the end-of-arm tool bolts onto the flange (tuned to the flange face).
+const TOOL_MOUNT = { off: [0, 0, 0] as [number, number, number], rot: [0, 0, 0] as [number, number, number] }
 
 const DEBUG = typeof window !== 'undefined' && window.location.search.includes('debug')
 const DBG = ['#ff6b6b', '#ffd166', '#06d6a0', '#4cc9f0', '#b5179e', '#fb8500', '#ffffff']
@@ -157,6 +161,10 @@ export function RobotArm() {
                             <group ref={j6}>
                               {DEBUG && <axesHelper args={[0.4]} />}
                               <Link geom={g[6]} idx={6} color={FLANGE} rotation={degRot(c6.rot)} />
+                              {/* End-of-arm tool mounted on the flange */}
+                              <group position={TOOL_MOUNT.off} rotation={degRot(TOOL_MOUNT.rot)}>
+                                <Tool />
+                              </group>
                             </group>
                           </group>
                         </group>

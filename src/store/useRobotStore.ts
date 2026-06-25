@@ -11,6 +11,9 @@ import { SimEngine, type SimStatus } from './simEngine'
 
 let logId = 0
 
+/** End-of-arm tooling mounted on the JT6 flange. */
+export type ToolId = 'weldgun' | 'gripper' | 'none'
+
 interface RobotState {
   code: string
   status: SimStatus
@@ -20,8 +23,10 @@ interface RobotState {
   stepCount: number
   speedScale: number
   engine: SimEngine
+  tool: ToolId
 
   setCode: (code: string) => void
+  setTool: (tool: ToolId) => void
   compileProgram: () => boolean
   run: () => void
   pause: () => void
@@ -56,8 +61,10 @@ export const useRobotStore = create<RobotState>((set, get) => {
     stepCount: 0,
     speedScale: 1,
     engine,
+    tool: 'weldgun',
 
     setCode: (code) => set({ code }),
+    setTool: (tool) => set({ tool }),
 
     compileProgram: () => {
       const { code } = get()

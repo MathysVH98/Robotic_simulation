@@ -209,6 +209,7 @@ button { font-family: inherit; cursor: pointer; }
   padding: 7px 12px; border-radius: 999px;
 }
 .chip:active { background: rgba(47,139,255,0.14); }
+.chip-active { background: rgba(47,139,255,0.18); border-color: var(--accent); color: #cfe2ff; }
 
 .progress {
   position: relative; height: 24px; border-radius: 8px;

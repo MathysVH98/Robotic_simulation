@@ -2,6 +2,7 @@
 
 import { useRobotStore } from '../store/useRobotStore'
 import { EXAMPLES } from '../language/examples'
+import { TOOLS } from '../robot/tools'
 
 const SPEEDS = [0.25, 0.5, 1, 1.5, 2, 3]
 
@@ -13,6 +14,8 @@ export function Controls() {
   const stepOnce = useRobotStore((s) => s.step)
   const speedScale = useRobotStore((s) => s.speedScale)
   const setSpeedScale = useRobotStore((s) => s.setSpeedScale)
+  const tool = useRobotStore((s) => s.tool)
+  const setTool = useRobotStore((s) => s.setTool)
   const setCode = useRobotStore((s) => s.setCode)
   const stepCount = useRobotStore((s) => s.stepCount)
   const stepIndex = useRobotStore((s) => s.stepIndex)
@@ -48,6 +51,21 @@ export function Controls() {
               onClick={() => setSpeedScale(s)}
             >
               {s}×
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="examples">
+        <span className="examples-label">END‑OF‑ARM TOOL</span>
+        <div className="examples-list">
+          {TOOLS.map((t) => (
+            <button
+              key={t.id}
+              className={`chip ${tool === t.id ? 'chip-active' : ''}`}
+              onClick={() => setTool(t.id)}
+            >
+              {t.name}
             </button>
           ))}
         </div>
